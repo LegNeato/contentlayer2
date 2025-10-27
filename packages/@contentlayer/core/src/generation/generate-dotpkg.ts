@@ -101,7 +101,7 @@ export const generateDotpkgStream = ({
     S.fromEffect(resolveParams),
     S.chainMapEitherRight(({ schemaDef, targetPath }) =>
       pipe(
-        config.source.fetchData({ schemaDef, verbose }),
+        config.source.fetchData({ schemaDef, verbose, watch: isDev }),
         S.mapEffectEitherRight((cache) =>
           pipe(
             writeFilesForCache({ config, schemaDef, targetPath, cache, generationOptions, writtenFilesCache, isDev }),

@@ -105,7 +105,7 @@ export const makeSource: core.MakeSourcePlugin<Args> = (args) => async (sourceKe
         makeCoreSchema({ documentTypeDefs, options, esbuildHash }),
         T.mapError((error) => new SourceProvideSchemaError({ error })),
       ),
-    fetchData: ({ schemaDef, verbose, skipCachePersistence }) =>
+    fetchData: ({ schemaDef, verbose, skipCachePersistence, watch }) =>
       pipe(
         S.fromEffect(core.getCwd),
         S.chain((cwd) => {
@@ -127,6 +127,7 @@ export const makeSource: core.MakeSourcePlugin<Args> = (args) => async (sourceKe
             contentDirInclude,
             verbose,
             skipCachePersistence,
+            watch,
           })
         }),
       ),

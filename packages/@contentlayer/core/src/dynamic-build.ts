@@ -103,7 +103,7 @@ export const dynamicBuild = ({ config, verbose }: { config: Config; verbose: boo
 
       const cache = yield* $(
         pipe(
-          config.source.fetchData({ schemaDef, verbose, skipCachePersistence: true }),
+          config.source.fetchData({ schemaDef, verbose, skipCachePersistence: true, watch: false }),
           S.runHead,
           T.map(O.getUnsafe),
           T.chain((_) => T.fromEither(() => _)),

@@ -24,6 +24,7 @@ export const fetchData = ({
   contentDirExclude,
   skipCachePersistence = false,
   verbose,
+  watch = true,
 }: {
   coreSchemaDef: core.SchemaDef
   documentTypeDefs: LocalSchema.DocumentTypeDef[]
@@ -38,6 +39,12 @@ export const fetchData = ({
    */
   skipCachePersistence?: boolean
   verbose: boolean
+  /**
+   * Whether file system changes should be watched for incremental updates.
+   * Disable this for one-off builds to avoid hanging on environments without
+   * file watcher support (e.g. sandboxed CI agents).
+   */
+  watch?: boolean
 }): S.Stream<
   OT.HasTracer & HasCwd & HasConsole & fs.HasFs,
   never,
@@ -48,18 +55,18 @@ export const fetchData = ({
 
   const initEvent: CustomUpdateEventInit = { _tag: 'init' }
 
-  const watchPaths = contentDirInclude.length > 0 ? contentDirInclude : ['.']
-
-  const fileUpdatesStream = pipe(
-    FSWatch.makeAndSubscribe(watchPaths, {
-      cwd: contentDirPath,
-      ignoreInitial: true,
-      ignored: contentDirExclude as unknown as string[], // NOTE type cast needed because of readonly array
-      // Unfortunately needed in order to avoid race conditions
-      awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },
-    }),
-    S.mapEitherRight(chokidarAllEventToCustomUpdateEvent),
-  )
+  const fileUpdatesStream = watch
+    ? pipe(
+        FSWatch.makeAndSubscribe(contentDirInclude.length > 0 ? contentDirInclude : ['.'], {
+          cwd: contentDirPath,
+          ignoreInitial: true,
+          ignored: contentDirExclude as unknown as string[], // NOTE type cast needed because of readonly array
+          // Unfortunately needed in order to avoid race conditions
+          awaitWriteFinish: { stabilityThreshold: 50, pollInterval: 10 },
+        }),
+        S.mapEitherRight(chokidarAllEventToCustomUpdateEvent),
+      )
+    : S.fromIterable<E.Either<FSWatch.FileWatcherError, CustomUpdateEvent>>([])
 
   const resolveParams = pipe(
     skipCachePersistence
